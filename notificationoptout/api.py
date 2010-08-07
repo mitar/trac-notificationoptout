@@ -2,6 +2,10 @@ from trac.core import *
 from trac.env import IEnvironmentSetupParticipant
 from trac.prefs import web_ui as prefswebui
 from trac.ticket import notification as ticketnotification
+from trac.web.api import ITemplateStreamFilter
+
+from genshi.builder import tag
+from genshi.filters.transform import Transformer
 
 def get_known_users_optout(env, cnx=None):
 	"""
@@ -35,7 +39,7 @@ def get_known_users_optout(env, cnx=None):
 saved_do_save = None
 def do_save(self, req):
 	"""
-	Saves changes to notification preferences.
+	Saves changes to notification opt-out preferences.
 	"""
 
 	if 'ticket-notification-optout' not in prefswebui.PreferencesModule._form_fields:
@@ -70,7 +74,7 @@ class NotificationOptOut(Component):
 	This component adds to Trac e-mail notifications opt-out preference for users.
 	"""
 	
-	implements(IEnvironmentSetupParticipant)
+	implements(IEnvironmentSetupParticipant, ITemplateStreamFilter)
 
 	def __init__(self):
 		global saved_do_save
@@ -82,6 +86,8 @@ class NotificationOptOut(Component):
 			if saved_get_recipients is None:
 				saved_get_recipients = ticketnotification.TicketNotifyEmail.get_recipients
 				ticketnotification.TicketNotifyEmail.get_recipients = get_recipients
+	
+	# IEnvironmentSetupParticipant methods
 
 	def environment_created(self):
 		"""
@@ -111,3 +117,31 @@ class NotificationOptOut(Component):
 		"""
 
 		pass
+
+	# ITemplateStreamFilter methods
+
+	def filter_stream(self, req, method, filename, stream, data):
+		"""
+		Returns changed stream for `prefs_general.html` template with notification
+		opt-out preference option.
+
+		`req` is the current request object, `method` is the Genshi render
+		method (xml, xhtml or text), `filename` is the filename of the template
+		to be rendered, `stream` is the event stream and `data` is the data for
+		the current template.
+		"""
+
+		if filename == 'prefs_general.html' and req.authname != 'anonymous':
+			stream |= Transformer('.//table').append(
+				tag.tr(
+					tag.th(
+                        tag.label('Ticket notifications opt-out:', **{'for': 'ticket-notification-optout'}),
+					),
+					tag.td(
+						tag.input(type="hidden", name="ticket-notification-optout_cb", value=""),
+						tag.input(type="checkbox", id="ticket-notification-optout", name="ticket-notification-optout", checked=req.session.get('ticket-notification-optout') or None),
+					),
+                    **{'class': 'field'}
+				),
+			)
+		return stream
