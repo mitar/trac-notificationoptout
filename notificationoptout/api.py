@@ -33,7 +33,7 @@ def get_known_users_optout(env, cnx=None):
 					" LEFT JOIN session_attribute AS o ON (o.sid=s.sid "
 					"  AND o.authenticated=1 AND o.name = 'ticket-notification-optout') "
 					"WHERE s.authenticated=1 ORDER BY s.sid")
-	for username,name,email,optout in cursor:
+	for username, name, email, optout in cursor:
 		yield username, name, email, optout
 
 saved_do_save = None
