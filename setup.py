@@ -13,9 +13,10 @@ setup(
 	keywords = 'trac plugin',
 	license = "GPLv3",
 	packages = [PACKAGE],
-    include_package_data = True,
-    zip_safe = False,
-	entry_points={
+	include_package_data = True,
+	install_requires = [],
+	zip_safe = False,
+	entry_points = {
 		'trac.plugins': '%s = %s' % (PACKAGE, PACKAGE),
 	},
 )
