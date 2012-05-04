@@ -1,5 +1,6 @@
 from trac.core import *
 from trac.config import BoolOption
+from trac.admin import IAdminCommandProvider
 from trac.env import IEnvironmentSetupParticipant
 from trac.perm import PermissionCache
 from trac.prefs import web_ui as prefswebui
@@ -87,7 +88,7 @@ class NotificationOptOut(Component):
     disable_optout_for_nonpublic = BoolOption('notification', 'disable_optout_for_nonpublic', False,
         """Do not allow to opt-out for nonpublic tickets notifications.""")
     
-    implements(IEnvironmentSetupParticipant, ITemplateStreamFilter)
+    implements(IEnvironmentSetupParticipant, ITemplateStreamFilter, IAdminCommandProvider)
 
     def __init__(self):
         global disable_optout_for_nonpublic
@@ -101,6 +102,7 @@ class NotificationOptOut(Component):
             if saved_get_recipients is None:
                 saved_get_recipients = ticketnotification.TicketNotifyEmail.get_recipients
                 ticketnotification.TicketNotifyEmail.get_recipients = get_recipients
+            self.env.log.debug("NotificationOptOut hooked")
 
         disable_optout_for_nonpublic = self.disable_optout_for_nonpublic
     
@@ -162,3 +164,10 @@ class NotificationOptOut(Component):
                 ),
             )
         return stream
+
+    # IAdminCommandProvider methods
+
+    def get_admin_commands(self):
+        """Return a list of available admin commands."""
+
+        return []
